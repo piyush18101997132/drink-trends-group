@@ -1,0 +1,6 @@
+{
+  "name": "Drink India",
+  "description": "Royal Indian Beverages E-Commerce App with Role-Based User, Admin, and Superadmin Dashboards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
