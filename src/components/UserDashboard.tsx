@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { ShoppingCart, Search, Filter, Sparkles, SlidersHorizontal, Check, RefreshCw, MapPin, Phone, CheckCircle, Tag, Info } from 'lucide-react';
 import { Product, CartItem, Order } from '../types';
+import ProductCart from './ProductCart';
 
 interface UserDashboardProps {
   products: Product[];
@@ -93,6 +93,7 @@ export default function UserDashboard({
   };
 
   return (
+    <>
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       
       {/* Hero Welcome banner */}
@@ -102,7 +103,7 @@ export default function UserDashboard({
         
         <div className="relative z-10 max-w-2xl">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-800/60 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-amber-200">
-            <Sparkles className="h-3 w-3 text-amber-400" />
+            <i className="fas fa-wand-magic-sparkles" style={{ color: '#fbbf24' }}></i>
             Vocal for Local Beverages
           </span>
           <h2 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl font-heading">
@@ -130,7 +131,7 @@ export default function UserDashboard({
           <div className="rounded-2xl border border-amber-900/10 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between border-b border-amber-900/5 pb-4 mb-5">
               <h3 className="font-heading font-bold text-amber-950 flex items-center gap-2">
-                <SlidersHorizontal className="h-4 w-4 text-amber-800" />
+                <i className="fas fa-sliders" style={{ fontSize: '14px' }}></i>
                 Refine Selection
               </h3>
               <p className="font-mono text-[10px] text-amber-700 font-bold uppercase">{filteredProducts.length} Drinks</p>
@@ -142,7 +143,7 @@ export default function UserDashboard({
                 <label className="block text-xs font-semibold text-amber-900 uppercase tracking-wide mb-1.5">Search Beverages</label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600/70">
-                    <Search className="h-4 w-4" />
+                    <i className="fas fa-magnifying-glass"></i>
                   </span>
                   <input
                     type="text"
@@ -195,7 +196,7 @@ export default function UserDashboard({
           {/* Quick Informational Guide banner */}
           <div className="rounded-2xl bg-amber-50 border border-amber-900/10 p-5 space-y-3.5">
             <h4 className="font-heading font-bold text-amber-950 flex items-center gap-1.5 text-sm">
-              <Info className="h-4 w-4 text-amber-700" />
+              <i className="fas fa-circle-info" style={{ color: '#b45309' }}></i>
               Sourcing Guarantee
             </h4>
             <ul className="text-xs text-amber-900 space-y-2 leading-relaxed">
@@ -247,81 +248,7 @@ export default function UserDashboard({
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredProducts.map((prod) => (
-                <div 
-                  key={prod.id} 
-                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-amber-900/10 bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-amber-700/25"
-                >
-                  {/* Image container and indicators */}
-                  <div className="relative aspect-4/3 overflow-hidden bg-amber-100">
-                    <img
-                      src={prod.imageUrl}
-                      alt={prod.name}
-                      referrerPolicy="no-referrer"
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    
-                    {/* Floating top tags */}
-                    <div className="absolute top-3 inset-x-3 flex justify-between items-start">
-                      <span className="rounded-md bg-white/95 backdrop-blur-sm px-2 py-0.5 font-mono text-[9.5px] font-bold text-amber-950 shadow-sm">
-                        {prod.volume}
-                      </span>
-                      {prod.stock < 10 && prod.stock > 0 && (
-                        <span className="rounded-md bg-amber-700 px-2 py-0.5 font-mono text-[9.5px] font-bold text-white uppercase shadow-sm">
-                          Only {prod.stock} Left
-                        </span>
-                      )}
-                      {prod.stock === 0 && (
-                        <span className="rounded-md bg-gray-600 px-2 py-0.5 font-mono text-[9.5px] font-bold text-white uppercase shadow-sm">
-                          Sold Out
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Best-seller indicator tag */}
-                    {prod.salesCount > 150 && (
-                      <div className="absolute bottom-3 left-3 flex items-center gap-1 rounded-full bg-amber-950/90 backdrop-blur-sm px-2.5 py-1 text-[9px] font-bold text-amber-400">
-                        <Sparkles className="h-2.5 w-2.5" />
-                        <span>Bestseller</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Body Content */}
-                  <div className="flex flex-1 flex-col p-5">
-                    <p className="font-mono text-[9px] font-extrabold uppercase tracking-widest text-amber-700">{prod.category}</p>
-                    <h4 className="mt-1 font-heading text-base font-bold text-amber-950 line-clamp-1 group-hover:text-amber-800 transition-colors">
-                      {prod.name}
-                    </h4>
-                    <p className="mt-2 text-xs leading-relaxed text-amber-900/70 line-clamp-2">
-                      {prod.description}
-                    </p>
-
-                    {/* Price and Add button layout */}
-                    <div className="mt-auto pt-4 flex items-center justify-between border-t border-amber-900/5">
-                      <div>
-                        <span className="font-mono text-[10px] text-amber-700 font-bold block leading-none">Price</span>
-                        <span className="text-xl font-black text-amber-950">₹{prod.price}</span>
-                      </div>
-
-                      <button
-                        onClick={() => prod.stock > 0 && onAddToCart(prod)}
-                        disabled={prod.stock === 0}
-                        className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all cursor-pointer ${
-                          prod.stock === 0
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'bg-amber-900 hover:bg-amber-950 text-white shadow-md shadow-amber-900/10'
-                        }`}
-                      >
-                        <ShoppingCart className="h-3.5 w-3.5" />
-                        <span>{prod.stock === 0 ? 'Out of Stock' : 'Add to Cart'}</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ProductCart products={filteredProducts} onAddToCart={onAddToCart} />
           )}
 
           {/* User's Checkout Order History Panel */}
@@ -360,7 +287,7 @@ export default function UserDashboard({
 
                     <div className="flex justify-between items-center border-t border-amber-900/5 pt-2.5 mt-2.5">
                       <div className="flex items-center text-[11px] text-amber-700/80 gap-1">
-                        <MapPin className="h-3.5 w-3.5" />
+                        <i className="fas fa-location-dot"></i>
                         <span className="truncate max-w-[200px] sm:max-w-md">{ord.shippingAddress}</span>
                       </div>
                       <span className="font-bold text-amber-950 font-heading">Total: <span className="font-mono text-base">₹{ord.totalAmount}</span></span>
@@ -379,7 +306,7 @@ export default function UserDashboard({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white p-6 text-center shadow-xl">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-800">
-              <CheckCircle className="h-8 w-8" />
+              <i className="fas fa-circle-check" style={{ fontSize: '32px' }}></i>
             </div>
             <h3 className="mt-4 font-heading text-xl font-bold text-amber-950">
               Order Placed Successfully!
@@ -399,7 +326,7 @@ export default function UserDashboard({
             </div>
             <button
               onClick={onResetOrderState}
-              className="mt-6 w-full rounded-xl bg-amber-900 hover:bg-amber-950 text-white py-3 text-sm font-semibold transition-colors cursor-pointer"
+              className="mt-6 w-full rounded-2 p-2 small bg-amber-900 hover:bg-amber-950 text-white font-semibold transition-colors cursor-pointer"
             >
               Back to Storefront
             </button>
@@ -415,7 +342,7 @@ export default function UserDashboard({
             {/* Drawer Header */}
             <div className="bg-amber-950 text-white p-5 flex items-center justify-between">
               <h3 className="font-heading font-bold text-lg flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5 text-amber-400" />
+                <i className="fas fa-cart-shopping" style={{ color: '#fbbf24' }}></i>
                 Your Royal Cart
               </h3>
               <button 
@@ -432,7 +359,7 @@ export default function UserDashboard({
                 <div className="flex-1 overflow-y-auto p-5 space-y-4">
                   {cart.length === 0 ? (
                     <div className="text-center py-24 space-y-3">
-                      <ShoppingCart className="mx-auto h-12 w-12 text-amber-800/20" />
+                      <i className="fas fa-cart-shopping" style={{ fontSize: '48px', color: 'rgba(180, 83, 9, 0.2)', display: 'block', marginBottom: '12px' }}></i>
                       <p className="text-sm text-amber-800/70">Your shopping cart is currently vacant.</p>
                       <button 
                         onClick={() => setShowCheckoutForm(false)}
@@ -574,7 +501,7 @@ export default function UserDashboard({
                     </div>
 
                     <div className="rounded-xl border border-amber-900/5 bg-amber-50 p-3 flex gap-2.5 text-[11px] text-amber-900">
-                      <Tag className="h-4 w-4 text-amber-700 flex-shrink-0" />
+                      <i className="fas fa-tag" style={{ color: '#b45309', flexShrink: 0 }}></i>
                       <p>
                         <strong>Cash on Delivery (COD) / Mock Pay</strong>: We support simulation testing out of the box in playground environments.
                       </p>
@@ -597,7 +524,7 @@ export default function UserDashboard({
                   >
                     {isPlacingOrder ? (
                       <>
-                        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                        <i className="fas fa-arrows-rotate animate-spin" style={{ marginRight: '6px' }}></i>
                         <span>Assembling Order...</span>
                       </>
                     ) : (
@@ -619,7 +546,7 @@ export default function UserDashboard({
           className="fixed bottom-6 right-6 z-40 bg-amber-950 hover:bg-amber-900 text-amber-50 rounded-2xl shadow-xl hover:shadow-2xl px-5 py-4 flex items-center gap-2.5 transition-all cursor-pointer group"
         >
           <div className="relative">
-            <ShoppingCart className="h-5 w-5" />
+            <i className="fas fa-cart-shopping"></i>
             <span className="absolute -top-1.5 -right-1.5 bg-amber-600 text-white rounded-full h-4 w-4 flex items-center justify-center text-[9px] font-bold">
               {cart.length}
             </span>
@@ -631,5 +558,6 @@ export default function UserDashboard({
       )}
 
     </div>
+    </>
   );
 }

@@ -339,12 +339,12 @@ export default function AdminDashboard({
 
                   {/* Interactive order flow changer */}
                   <div className="flex flex-wrap items-center gap-1 bg-amber-50 p-1 rounded-xl border border-amber-950/5">
-                    <span className="font-mono text-[9px] uppercase font-bold text-amber-800 px-2">Update Stage:</span>
+                    <span className="font-mono text-[10px] uppercase font-bold text-amber-800 px-2">Update Stage:</span>
                     {(['pending', 'processing', 'completed', 'cancelled'] as Order['status'][]).map((st) => (
                       <button
                         key={st}
                         onClick={() => onUpdateOrderStatus(ord.id, st)}
-                        className={`rounded-lg px-2 py-1 font-mono text-[9.5px] font-extrabold uppercase transition-all whitespace-nowrap cursor-pointer ${
+                        className={`rounded-lg px-2 font-mono uppercase transition-all whitespace-nowrap cursor-pointer ${
                           ord.status === st
                             ? 'bg-amber-900 text-white'
                             : 'text-amber-900 hover:bg-amber-200'
@@ -451,11 +451,11 @@ export default function AdminDashboard({
 
       {/* DYNAMIC MODAL LAYER FOR PRODUCT ARCHIVING (ADD/EDIT) */}
       {showProductModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white border border-amber-950/10 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2">
+          <div className="w-full max-w-lg  mt-5 overflow-hidden rounded-2xl bg-white border border-amber-950/10 shadow-2xl">
             
             {/* Modal Header */}
-            <div className="bg-amber-950 text-amber-50 p-5 flex items-center justify-between">
+            <div className="bg-amber-950 text-amber-50 p-2 flex items-center justify-between">
               <h3 className="font-heading font-bold text-lg">
                 {editingProduct ? `Edit traditional drink: ${editingProduct.name}` : 'Assemble New Indian Brew'}
               </h3>
@@ -576,14 +576,14 @@ export default function AdminDashboard({
                 <button
                   type="button"
                   onClick={() => setShowProductModal(false)}
-                  className="rounded-xl border border-amber-900/15 py-2.5 px-4 text-xs font-semibold text-amber-950 hover:bg-amber-100/30"
+                  className="border border-amber-900/15 p-2 small rounded-2 font-semibold text-amber-950 hover:bg-amber-100/30"
                 >
                   Discard Changes
                 </button>
                 <button
                   type="submit"
                   disabled={isDbSyncing}
-                  className="rounded-xl bg-amber-900 hover:bg-amber-950 text-amber-50 py-2.5 px-5 text-xs font-bold shadow-md shadow-amber-900/10"
+                  className="bg-amber-900 hover:bg-amber-950 text-amber-50 p-2 rounded-2 small font-bold shadow-md shadow-amber-900/10"
                 >
                   {isDbSyncing ? 'Syncing...' : editingProduct ? 'Commit Edits' : 'Enact Drink Curation'}
                 </button>

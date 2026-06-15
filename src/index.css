@@ -1,1 +1,11 @@
 @import "tailwindcss";
+body {
+ @font-face {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    src: url('/fonts/Inter-Regular.ttf') format('truetype');
+    font-weight: 400;}
+    font-size: 17px;
+}
+.royal-h-b {
+    font-size: 11px;
+}

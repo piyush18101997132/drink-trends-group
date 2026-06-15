@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { CupSoda, Users, Lock, LogIn, ArrowRight, ShieldCheck, RefreshCw, Sparkles, Server } from 'lucide-react';
 import { User, Product, CartItem, Order, SystemSettings, AuditLog, UserRole } from './types';
 import Navbar from './components/Navbar';
+import Sidebar from './components/sidebar';
 import UserDashboard from './components/UserDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import SuperadminDashboard from './components/SuperadminDashboard';
+import { SidebarProvider } from './context/SidebarContext';
 
 export default function App() {
   // Session details stored in localStorage
@@ -515,64 +517,69 @@ export default function App() {
 
             {/* Preconfigured Account Quick Logins for Evaluator Ease! */}
             {authMode === 'login' && (
-              <div className="space-y-2">
-                <p className="font-mono text-[9.5px] uppercase font-bold tracking-wider text-amber-800 flex items-center gap-1.5">
-                  <Sparkles className="h-3 w-3 text-amber-600" />
-                  Select Demo Identity (No Typing Required)
-                </p>
+              <>
+                <span className="font-mono text-[10.5px] text-amber-805">admin@drinkindia.com / admin123</span>  &nbsp;&nbsp;
+                <span className="font-mono text-[10.5px] text-amber-805">superadmin@drinkindia.com / super123</span><br/>
+                <span className="font-mono text-[10.5px] text-amber-800">user@drinkindia.com / user123</span><br/><br/>
+              </>
+              // <div className="space-y-2">
+              //   <p className="font-mono text-[9.5px] uppercase font-bold tracking-wider text-amber-800 flex items-center gap-1.5">
+              //     <Sparkles className="h-3 w-3 text-amber-600" />
+              //     Select Demo Identity (No Typing Required)
+              //   </p>
                 
-                <div className="grid grid-cols-1 gap-2.5">
+              //   <div className="grid grid-cols-1 gap-2.5">
                   
-                  {/* Preset 1: Customer */}
-                  <button
-                    type="button"
-                    onClick={() => executePresetLogin('user@drinkindia.com', 'user123')}
-                    className="group relative flex items-center justify-between rounded-xl border border-amber-900/10 hover:border-amber-700 hover:bg-amber-50/40 p-3 transition-colors cursor-pointer text-left"
-                  >
-                    <div>
-                      <span className="font-bold text-xs text-amber-950 block">Customer Shopper (Aarav)</span>
-                      <span className="font-mono text-[9.5px] text-amber-800">user@drinkindia.com • pass: user123</span>
-                    </div>
-                    <ArrowRight className="h-4 w-4 text-amber-800 transition-transform group-hover:translate-x-1" />
-                  </button>
+              //     {/* Preset 1: Customer */}
+              //     <button
+              //       type="button"
+              //       onClick={() => executePresetLogin('user@drinkindia.com', 'user123')}
+              //       className="group relative flex items-center justify-between rounded-xl border border-amber-900/10 hover:border-amber-700 hover:bg-amber-50/40 p-3 transition-colors cursor-pointer text-left"
+              //     >
+              //       <div>
+              //         <span className="font-bold text-xs text-amber-950 block">Customer Shopper (Aarav)</span>
+              //         <span className="font-mono text-[9.5px] text-amber-800">user@drinkindia.com • pass: user123</span>
+              //       </div>
+              //       <ArrowRight className="h-4 w-4 text-amber-800 transition-transform group-hover:translate-x-1" />
+              //     </button>
 
-                  {/* Preset 2: Admin */}
-                  <button
-                    type="button"
-                    onClick={() => executePresetLogin('admin@drinkindia.com', 'admin123')}
-                    className="group relative flex items-center justify-between rounded-xl border border-amber-900/10 hover:border-amber-700 hover:bg-amber-50/40 p-3 transition-colors cursor-pointer text-left"
-                  >
-                    <div>
-                      <span className="font-bold text-xs text-amber-950 block">Catalog Admin manager (Priya)</span>
-                      <span className="font-mono text-[9.5px] text-amber-805">admin@drinkindia.com • pass: admin123</span>
-                    </div>
-                    <ArrowRight className="h-4 w-4 text-amber-800 transition-transform group-hover:translate-x-1" />
-                  </button>
+              //     {/* Preset 2: Admin */}
+              //     <button
+              //       type="button"
+              //       onClick={() => executePresetLogin('admin@drinkindia.com', 'admin123')}
+              //       className="group relative flex items-center justify-between rounded-xl border border-amber-900/10 hover:border-amber-700 hover:bg-amber-50/40 p-3 transition-colors cursor-pointer text-left"
+              //     >
+              //       <div>
+              //         <span className="font-bold text-xs text-amber-950 block">Catalog Admin manager (Priya)</span>
+              //         <span className="font-mono text-[9.5px] text-amber-805">admin@drinkindia.com • pass: admin123</span>
+              //       </div>
+              //       <ArrowRight className="h-4 w-4 text-amber-800 transition-transform group-hover:translate-x-1" />
+              //     </button>
 
-                  {/* Preset 3: Superadmin */}
-                  <button
-                    type="button"
-                    onClick={() => executePresetLogin('superadmin@drinkindia.com', 'super123')}
-                    className="group relative flex items-center justify-between rounded-xl border border-amber-900/10 hover:border-amber-700 hover:bg-amber-50/40 p-3 transition-colors cursor-pointer text-left"
-                  >
-                    <div>
-                      <span className="font-bold text-xs text-amber-950 block">System Superadmin (Rajesh)</span>
-                      <span className="font-mono text-[9.5px] text-amber-805">superadmin@drinkindia.com • pass: super123</span>
-                    </div>
-                    <ArrowRight className="h-4 w-4 text-amber-800 transition-transform group-hover:translate-x-1" />
-                  </button>
+              //     {/* Preset 3: Superadmin */}
+              //     <button
+              //       type="button"
+              //       onClick={() => executePresetLogin('superadmin@drinkindia.com', 'super123')}
+              //       className="group relative flex items-center justify-between rounded-xl border border-amber-900/10 hover:border-amber-700 hover:bg-amber-50/40 p-3 transition-colors cursor-pointer text-left"
+              //     >
+              //       <div>
+              //         <span className="font-bold text-xs text-amber-950 block">System Superadmin (Rajesh)</span>
+              //         <span className="font-mono text-[9.5px] text-amber-805">superadmin@drinkindia.com • pass: super123</span>
+              //       </div>
+              //       <ArrowRight className="h-4 w-4 text-amber-800 transition-transform group-hover:translate-x-1" />
+              //     </button>
 
-                </div>
+              //   </div>
 
-                <div className="relative py-4">
-                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                    <div className="w-full border-t border-amber-900/10"></div>
-                  </div>
-                  <div className="relative flex justify-center text-[10px] uppercase font-mono tracking-wider">
-                    <span className="bg-white px-3 text-amber-700">Or credentials login</span>
-                  </div>
-                </div>
-              </div>
+              //   <div className="relative py-4">
+              //     <div className="absolute inset-0 flex items-center" aria-hidden="true">
+              //       <div className="w-full border-t border-amber-900/10"></div>
+              //     </div>
+              //     <div className="relative flex justify-center text-[10px] uppercase font-mono tracking-wider">
+              //       <span className="bg-white px-3 text-amber-700">Or credentials login</span>
+              //     </div>
+              //   </div>
+              // </div>
             )}
 
             {/* FORM FIELD BLOCKS */}
@@ -694,7 +701,8 @@ export default function App() {
 
   // Render Core Logged-in application
   return (
-    <div className="min-h-screen bg-stone-50 flex flex-col justify-between">
+    <SidebarProvider>
+      <div className="min-h-screen bg-stone-50 flex flex-col justify-between">
       
       {/* Dynamic Header */}
       <Navbar
@@ -710,7 +718,10 @@ export default function App() {
       />
 
       {/* Main active view switcher with Role checking protections */}
-      <main className="flex-1">
+      <div className="flex flex-1">
+        <Sidebar />
+
+        <main className="flex-1">
         
         {/* VIEW 1: Storefront user catalog */}
         {activeTab === 'shop' && (
@@ -757,7 +768,8 @@ export default function App() {
           />
         )}
 
-      </main>
+        </main>
+      </div>
 
       {/* Footer copyright */}
       <footer className="bg-amber-950 text-amber-200/40 text-center py-6 text-xs font-mono border-t border-amber-900/30">
@@ -771,5 +783,6 @@ export default function App() {
       </footer>
 
     </div>
+  </SidebarProvider>
   );
 }
