@@ -5,6 +5,10 @@ import dotenv from 'dotenv';
 import mysql from 'mysql2/promise';
 import { createServer as createViteServer } from 'vite';
 
+const logger = (message: string) => {
+  console.log(`[${new Date().toISOString()}] ${message}`);
+};
+
 // Load environment variables
 dotenv.config();
 
@@ -94,6 +98,8 @@ async function initializeMySQLTables() {
         password VARCHAR(255) NOT NULL,
         role ENUM('user', 'admin', 'superadmin') DEFAULT 'user',
         status ENUM('active', 'suspended') DEFAULT 'active',
+        phone VARCHAR(50),
+        address TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       ) ENGINE=InnoDB;
     `);
@@ -177,9 +183,39 @@ async function startServer() {
   /**
    * AUTHENTICATION & LOGIN
    */
-  app.post('/api/auth/login', (req, res) => {
+  app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
-    const user = inMemoryUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    let user: any = inMemoryUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+    if (!user && pool) {
+      try {
+        const conn = await pool.getConnection();
+        const [rows] = await conn.query(
+          'SELECT id, name, email, password, role, status, phone, address, created_at AS createdAt FROM users WHERE email = ?',
+          [email]
+        );
+        conn.release();
+
+        const results = Array.isArray(rows) ? rows : [];
+        if (results.length) {
+          const dbUser: any = results[0];
+          user = {
+            id: dbUser.id,
+            name: dbUser.name,
+            email: dbUser.email,
+            password: dbUser.password,
+            role: dbUser.role,
+            status: dbUser.status,
+            phone: dbUser.phone,
+            address: dbUser.address,
+            createdAt: dbUser.createdAt
+          };
+        }
+      } catch (dbErr: any) {
+        console.error('[MySQL Error] Failed to query user for login:', dbErr);
+        return res.status(500).json({ message: 'Login failed due to server database error.' });
+      }
+    }
 
     if (!user) {
       return res.status(401).json({ message: 'Invalid email address.' });
@@ -194,22 +230,50 @@ async function startServer() {
     logAudit(user.id, user.name, user.role, 'USER_LOGIN', `Logged in via IP ${req.ip || '127.0.0.1'}`);
     
     // Return safe user details
-    const safeUser = { id: user.id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt, status: user.status };
+    const safeUser: any = { id: user.id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt, status: user.status };
+    if (user.phone) safeUser.phone = user.phone;
+    if (user.address) safeUser.address = user.address;
+
     res.json({ token: `mock_jwt_token_for_${user.email}`, user: safeUser });
   });
 
-  app.post('/api/auth/register', (req, res) => {
-    const { name, email, password } = req.body;
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Please provide all details (name, email, password).' });
+  app.post('/api/auth/register', async (req, res) => {
+    
+    logger("Register API hit");
+    const { name, email, password} = req.body;
+      res.json({
+    message: "API debug working",
+    data: req.body
+  });
+    // Basic required fields
+    const errors: { field: string; message: string }[] = [];
+    if (!name) errors.push({ field: 'name', message: 'Name is required.' });
+    if (!email) errors.push({ field: 'email', message: 'Email is required.' });
+    if (!password) errors.push({ field: 'password', message: 'Password is required.' });
+
+    // Helper validators
+    const validateEmail = (e: string) => {
+      const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(".+"))@(([^<>()[\]\\.,;:\s@\"]+\.)+[^<>()[\]\\.,;:\s@\"]{2,})$/i;
+      return re.test(String(e).toLowerCase());
+    };
+    const validatePassword = (p: string) => {
+      // At least 8 chars, one letter and one number
+      return /(?=.{8,})(?=.*[0-9])(?=.*[A-Za-z])/.test(p);
+    };
+
+    if (email && !validateEmail(email)) errors.push({ field: 'email', message: 'Invalid email format.' });
+    if (password && !validatePassword(password)) errors.push({ field: 'password', message: 'Password must be at least 8 characters and include letters and numbers.' });
+
+    if (errors.length) {
+      return res.status(400).json({ error: 'validation_error', details: errors });
     }
 
-    const exists = inMemoryUsers.some(u => u.email.toLowerCase() === email.toLowerCase());
-    if (exists) {
-      return res.status(409).json({ message: 'Email address is already registered.' });
+    const existingUser = inMemoryUsers.some(u => u.email.toLowerCase() === email.toLowerCase());
+    if (existingUser) {
+      return res.status(409).json({ error: 'conflict', message: 'Email address is already registered.' });
     }
 
-    const newUser = {
+    const newUser: any = {
       id: inMemoryUsers.length + 1,
       name,
       email,
@@ -219,10 +283,26 @@ async function startServer() {
       createdAt: new Date().toISOString()
     };
 
+    // Persist to MySQL if connected
+    if (pool) {
+      try {
+        const conn = await pool.getConnection();
+        await conn.query(
+          'INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, ?, ?)',
+          [name, email, password, 'user', 'active']
+        );
+        conn.release();
+      } catch (dbErr: any) {
+        console.error('[MySQL Error] Failed to insert new user:', dbErr);
+        return res.status(500).json({ error: 'server_error', message: 'Could not save user to database.' });
+      }
+    }
+
     inMemoryUsers.push(newUser);
     logAudit(newUser.id, newUser.name, 'user', 'USER_REGISTER', `Created new customer account.`);
 
-    const safeUser = { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role, createdAt: newUser.createdAt, status: newUser.status };
+    const safeUser: any = { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role, createdAt: newUser.createdAt, status: newUser.status };
+    
     res.status(201).json({ token: `mock_jwt_token_for_${newUser.email}`, user: safeUser });
   });
 
