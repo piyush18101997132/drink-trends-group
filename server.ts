@@ -31,7 +31,6 @@ console.log(`[Database Setup] MySQL config checked. Found config: ${hasMySQLConf
 // Seed dataset
 let inMemoryUsers = [
   { id: 1, name: 'Aarav Sharma', email: 'user@drinkindia.com', password: 'user123', role: 'user', createdAt: '2026-06-01T10:00:00Z', status: 'active' },
-  { id: 2, name: 'Priya Iyer', email: 'admin@drinkindia.com', password: 'admin123', role: 'admin', createdAt: '2026-05-15T09:30:00Z', status: 'active' },
   { id: 3, name: 'Rajesh Nair', email: 'superadmin@drinkindia.com', password: 'super123', role: 'superadmin', createdAt: '2026-04-10T08:00:00Z', status: 'active' }
 ];
 
@@ -63,34 +62,33 @@ let inMemoryAuditLogs = [
 ];
 
 // Database Pool Connection (attempts to bridge to real MySQL if DB parameters are configured)
-let pool: mysql.Pool | null = null;
-if (hasMySQLConfig) {
-  try {
-    pool = mysql.createPool({
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
-      waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0,
-    });
-    console.log('[MySQL] Connection Pool successfully configured and initialized.');
-  } catch (err) {
-    console.error('[MySQL Error] Could not connect to the remote MySQL server:', err);
-  }
-}
+// MySQL connection pool using promise-based API
+const db = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
+
+// Test connection
+db.getConnection()
+  .then(conn => {
+    console.log("MySQL connected successfully");
+    conn.release();
+  })
+  .catch(err => {
+    console.log("Database connection failed:", err);
+  });
 
 // Function to perform basic migration checks inside the MySQL connection if configured
 async function initializeMySQLTables() {
-  if (!pool) return;
+  if (!hasMySQLConfig) return;
   try {
-    const conn = await pool.getConnection();
-    console.log('[MySQL Connection] Successfully obtained handle from connection pool.');
-    
     // Create Users table
-    await conn.query(`
+    await db.query(`
       CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
@@ -105,7 +103,7 @@ async function initializeMySQLTables() {
     `);
 
     // Create Products table
-    await conn.query(`
+    await db.query(`
       CREATE TABLE IF NOT EXISTS products (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
@@ -120,7 +118,7 @@ async function initializeMySQLTables() {
     `);
 
     // Create Orders table
-    await conn.query(`
+    await db.query(`
       CREATE TABLE IF NOT EXISTS orders (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
@@ -133,7 +131,7 @@ async function initializeMySQLTables() {
     `);
 
     // Create Audit Logs table
-    await conn.query(`
+    await db.query(`
       CREATE TABLE IF NOT EXISTS audit_logs (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT,
@@ -148,10 +146,8 @@ async function initializeMySQLTables() {
 
     // Log successfully created tables
     console.log('[MySQL Migration] Tables initialized/connected seamlessly.');
-    conn.release();
   } catch (err) {
-    console.error('[MySQL Setup Fail] Migration could not complete. Reverting completely to robust in-memory database mode:', err);
-    pool = null; // Forces fallback to in-memory mode for frictionless playground demonstration
+    console.error('[MySQL Setup Fail] Migration could not complete:', err);
   }
 }
 
@@ -179,22 +175,28 @@ async function startServer() {
   };
 
   // --- API ROUTES ---
+  app.get('/api/userData', async (req, res) => {
+      const [userData] = await db.query('SELECT * FROM users');
+
+      if (!userData) {
+          return res.status(404).json({ message: 'User not found.' });
+      }
+      res.json({ status: true, user: userData });
+  });
 
   /**
    * AUTHENTICATION & LOGIN
    */
   app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
-    let user: any = inMemoryUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-    if (!user && pool) {
+    logger(`Login API hit ${email}`);
+    let user;
+    if (hasMySQLConfig) {
       try {
-        const conn = await pool.getConnection();
-        const [rows] = await conn.query(
-          'SELECT id, name, email, password, role, status, phone, address, created_at AS createdAt FROM users WHERE email = ?',
+        const [rows] = await db.query(
+          'SELECT id, name, email, password, role, status, created_at AS createdAt FROM users WHERE email = ?',
           [email]
         );
-        conn.release();
 
         const results = Array.isArray(rows) ? rows : [];
         if (results.length) {
@@ -205,9 +207,7 @@ async function startServer() {
             email: dbUser.email,
             password: dbUser.password,
             role: dbUser.role,
-            status: dbUser.status,
-            phone: dbUser.phone,
-            address: dbUser.address,
+            status: dbUser.status, 
             createdAt: dbUser.createdAt
           };
         }
@@ -231,20 +231,13 @@ async function startServer() {
     
     // Return safe user details
     const safeUser: any = { id: user.id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt, status: user.status };
-    if (user.phone) safeUser.phone = user.phone;
-    if (user.address) safeUser.address = user.address;
-
-    res.json({ token: `mock_jwt_token_for_${user.email}`, user: safeUser });
+    res.json({ status: true, token: `mock_jwt_token_for_${user.email}`, user: safeUser });
   });
 
   app.post('/api/auth/register', async (req, res) => {
     
     logger("Register API hit");
     const { name, email, password} = req.body;
-      res.json({
-    message: "API debug working",
-    data: req.body
-  });
     // Basic required fields
     const errors: { field: string; message: string }[] = [];
     if (!name) errors.push({ field: 'name', message: 'Name is required.' });
@@ -260,50 +253,58 @@ async function startServer() {
       // At least 8 chars, one letter and one number
       return /(?=.{8,})(?=.*[0-9])(?=.*[A-Za-z])/.test(p);
     };
-
+   
     if (email && !validateEmail(email)) errors.push({ field: 'email', message: 'Invalid email format.' });
     if (password && !validatePassword(password)) errors.push({ field: 'password', message: 'Password must be at least 8 characters and include letters and numbers.' });
-
+ 
     if (errors.length) {
-      return res.status(400).json({ error: 'validation_error', details: errors });
+      return res.status(400).json({ status: false, error: 'validation_error', details: errors });
     }
-
-    const existingUser = inMemoryUsers.some(u => u.email.toLowerCase() === email.toLowerCase());
-    if (existingUser) {
-      return res.status(409).json({ error: 'conflict', message: 'Email address is already registered.' });
-    }
-
-    const newUser: any = {
-      id: inMemoryUsers.length + 1,
-      name,
-      email,
-      password,
-      role: 'user' as const, // default role
-      status: 'active' as const,
-      createdAt: new Date().toISOString()
-    };
-
-    // Persist to MySQL if connected
-    if (pool) {
+    
+    // Check for existing user in MySQL if configured
+    let existingDbUser = null;
+    if (hasMySQLConfig) {
       try {
-        const conn = await pool.getConnection();
-        await conn.query(
-          'INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, ?, ?)',
-          [name, email, password, 'user', 'active']
-        );
-        conn.release();
+        const [rows] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
+        existingDbUser = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
       } catch (dbErr: any) {
-        console.error('[MySQL Error] Failed to insert new user:', dbErr);
-        return res.status(500).json({ error: 'server_error', message: 'Could not save user to database.' });
+        console.error('[MySQL Error] Failed to query user for registration:', dbErr);
+        return res.status(500).json({ status: false, error: 'server_error', message: 'Could not check existing users in database.' });
       }
     }
 
-    inMemoryUsers.push(newUser);
+    if (existingDbUser) {
+      return res.status(409).json({ status: false, error: 'conflict', message: 'Email address is already registered.' });
+    }
+ 
+    const newUser: any = {
+      name,
+      email,
+      password,
+      role: 'user' as const,
+      status: 'active' as const,
+      createdAt: new Date().toISOString()
+    };
+    // Persist to MySQL if configured
+    if (hasMySQLConfig) {
+      try {
+        await db.query(
+          'INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, ?, ?)',
+          [name, email, password, 'user', 'active']
+        );
+      } catch (dbErr: any) {
+        console.error('[MySQL Error] Failed to insert new user:', dbErr);
+        return res.status(500).json({ status: false, error: 'server_error', message: 'Could not save user to database.' });
+      }
+    }
+
+    logger("New user persisted to MySQL (if configured).");
+
     logAudit(newUser.id, newUser.name, 'user', 'USER_REGISTER', `Created new customer account.`);
 
     const safeUser: any = { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role, createdAt: newUser.createdAt, status: newUser.status };
-    
-    res.status(201).json({ token: `mock_jwt_token_for_${newUser.email}`, user: safeUser });
+    console.log("Safe user created: ", safeUser);
+    res.status(201).json({ status: true, token: `mock_jwt_token_for_${newUser.email}`, user: safeUser });
   });
 
   /**
@@ -320,6 +321,7 @@ async function startServer() {
       const userName = req.headers['x-user-name'] as string;
       const userIdStr = req.headers['x-user-id'] as string;
 
+      logger(`Role check for ${userName || 'Unknown'} (ID: ${userIdStr || 'N/A'}) with role: ${userRole || 'N/A'}. Allowed roles: ${allowedRoles.join(', ')}`);
       if (!userRole || !allowedRoles.includes(userRole)) {
         return res.status(403).json({ message: 'Access Denied: Insufficient permissions for this action.' });
       }
@@ -516,6 +518,7 @@ async function startServer() {
    */
   app.get('/api/users', checkRole(['superadmin']), (req, res) => {
     // Return all users for management
+    logger("Superadmin requested user list.");
     const safeUsers = inMemoryUsers.map(({ id, name, email, role, createdAt, status }) => ({ id, name, email, role, createdAt, status }));
     res.json(safeUsers);
   });
@@ -568,8 +571,8 @@ async function startServer() {
   // Database Connection Health Status Endpoint
   app.get('/api/db-status', (req, res) => {
     res.json({
-      connected: hasMySQLConfig && pool !== null,
-      mode: hasMySQLConfig && pool !== null ? 'PRODUCTION_MYSQL' : 'PREVIEW_FALLBACK_SANDBOX',
+      connected: hasMySQLConfig,
+      mode: hasMySQLConfig ? 'PRODUCTION_MYSQL' : 'PREVIEW_FALLBACK_SANDBOX',
       host: process.env.DB_HOST || 'In-Memory State Store'
     });
   });

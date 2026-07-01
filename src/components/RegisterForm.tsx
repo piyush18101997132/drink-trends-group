@@ -11,11 +11,13 @@ function RegisterForm({ onRegisterSuccess, onToggleMode }: RegisterFormProps) {
   const [regEmail, setRegEmail] = useState('');
   const [regPass, setRegPass] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
+    setSuccessMessage(null);
     setIsAuthLoading(true);
 
     try {
@@ -32,7 +34,15 @@ function RegisterForm({ onRegisterSuccess, onToggleMode }: RegisterFormProps) {
 
       localStorage.setItem('di_token', data.token);
       localStorage.setItem('di_user', JSON.stringify(data.user));
+      
+      // Show success message
+      setSuccessMessage('Account created successfully! Redirecting to login...');
       onRegisterSuccess(data.user);
+      
+      // Navigate to login after 2 seconds
+      setTimeout(() => {
+        onToggleMode();
+      }, 2000);
 
     } catch (err: any) {
       setAuthError(err.message || 'Failed to register account.');
@@ -58,6 +68,13 @@ function RegisterForm({ onRegisterSuccess, onToggleMode }: RegisterFormProps) {
           <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-xs text-red-800 flex gap-2.5">
             <span className="font-bold">Error:</span>
             <span>{authError}</span>
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="rounded-xl bg-green-50 border border-green-200 p-4 text-xs text-green-800 flex gap-2.5">
+            <span className="font-bold">Success:</span>
+            <span>{successMessage}</span>
           </div>
         )}
 

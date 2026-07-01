@@ -141,6 +141,13 @@ export default function App() {
     setActiveTab('shop');
   };
 
+  const handleAuthSuccess = (user: User, role: UserRole) => {
+    setCurrentUser(user);
+    setToken(localStorage.getItem('di_token'));
+    setRoleMode(role);
+    setActiveTab('shop');
+  };
+
   // 3. E-commerce Cart Handlers
   const handleAddToCart = (product: Product) => {
     setCart((prev) => {
@@ -393,7 +400,7 @@ export default function App() {
           </div>
         </div>
 
-        <RegisterLoginForm />
+        <RegisterLoginForm onAuthSuccess={handleAuthSuccess} />
 
       </div>
     );
